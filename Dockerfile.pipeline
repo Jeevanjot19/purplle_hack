@@ -1,0 +1,43 @@
+FROM python:3.11-slim AS builder
+
+# Install build dependencies + OpenGL
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libsm6 libxext6 libxrender-dev \
+    libgomp1 \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /pipeline
+
+# Copy requirements and pre-download YOLO model at build time
+COPY requirements.pipeline.txt .
+RUN pip install --no-cache-dir -r requirements.pipeline.txt && \
+    python -c "from ultralytics import YOLO; YOLO('yolo11s.pt')" && \
+    python -c "from ultralytics import YOLO; YOLO('yolo11m.pt')"
+
+# Final stage — minimal runtime image
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libsm6 libxext6 libxrender-dev \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /pipeline
+
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /root/.cache /root/.cache
+
+# Copy app code
+COPY pipeline/ /pipeline/
+COPY requirements.pipeline.txt .
+
+ENV PYTHONUNBUFFERED=1
+ENV STORE_ID=STORE_BLR_002
+ENV SPEED_FACTOR=5.0
+ENV DATA_DIR=/data
+ENV API_URL=http://api:8000
+
+CMD ["bash", "run.sh"]

@@ -1,0 +1,88 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Video files (test data)
+*.mp4
+*.avi
+*.mov
+
+# Database
+pgdata/
+redisdata/
+
+# Docker
+.docker
+
+# Logs
+*.log
+logs/
+
+# Migrations (auto-generated)
+*.sql
+
+# Temporary test files
+test_temp/
+temp/
+
+# Node (dashboard)
+node_modules/
+npm-debug.log
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated files
+.YOLO/
+
+# Large models (yolo11s.pt downloaded at runtime)
+yolo11s.pt
+
+# Config with sensitive data
+.env.production
+config.prod.json

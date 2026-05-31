@@ -1,0 +1,8 @@
+ultralytics==8.3.114
+opencv-python-headless==4.10.0.84
+shapely==2.0.6
+httpx==0.27.2
+numpy==1.26.4
+Pillow==10.4.0
+torch==2.3.1
+torchvision==0.18.1
