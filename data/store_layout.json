@@ -125,6 +125,53 @@
             "inside_y_direction": "up",
             "description": "Horizontal line at door threshold. Person moving UP (decreasing y) = entering store. Person moving DOWN (increasing y) = exiting."
           }
+        },
+        "CAM_5": {
+          "type": "billing_counter",
+          "description": "Billing/Cash Counter camera — POS desk, accessories screen, billing queue area",
+          "resolution": [1920, 1080],
+          "fps": 30,
+          "process": true,
+          "zones": [
+            {
+              "id": "BILLING_DESK",
+              "label": "POS Billing Desk / Checkout Area",
+              "polygon": [[400, 200], [900, 200], [900, 800], [400, 800]],
+              "is_entry": false,
+              "is_billing": true
+            },
+            {
+              "id": "ACCESSORIES_SCREEN",
+              "label": "Accessories Screen / Customer Wait Area",
+              "polygon": [[900, 200], [1400, 200], [1400, 800], [900, 800]],
+              "is_entry": false,
+              "is_billing": true
+            },
+            {
+              "id": "BILLING_QUEUE_AREA",
+              "label": "Queue / Standing Area",
+              "polygon": [[0, 0], [1920, 0], [1920, 1080], [0, 1080]],
+              "is_entry": false,
+              "is_billing": true
+            }
+          ],
+          "tripwire": {
+            "x1": 400,
+            "y1": 200,
+            "x2": 1400,
+            "y2": 200,
+            "inside_y_direction": "down",
+            "description": "Horizontal line at billing desk entrance. Person moving DOWN (increasing y) = entering billing area."
+          }
+        },
+        "CAM_4": {
+          "type": "stockroom",
+          "description": "Staff-only stockroom / back office — DO NOT PROCESS",
+          "resolution": [1920, 1080],
+          "fps": 30,
+          "process": false,
+          "skip_reason": "Staff-only area. No customers. Only adds noise.",
+          "zones": []
         }
       },
       "cross_camera_overlap": [
@@ -137,8 +184,21 @@
           "cameras": ["CAM_3", "CAM_1"],
           "region": "entry_to_main_floor",
           "description": "Person enters via CAM_3 door, then appears in CAM_1 main floor"
+        },
+        {
+          "cameras": ["CAM_1", "CAM_5"],
+          "region": "cash_counter_area",
+          "description": "Customer at cash counter visible in both CAM_1 and CAM_5"
         }
-      ]
+      ],
+      "camera_processing_order": [
+        "CAM_3",
+        "CAM_1",
+        "CAM_2",
+        "CAM_5"
+      ],
+      "skip_cameras": ["CAM_4"],
+      "notes": "CAM_3 is entry/exit source of truth. CAM_1, CAM_2, CAM_5 are zone/billing events only. CAM_4 skipped entirely."
     }
   }
 }

@@ -29,39 +29,72 @@ echo ""
 echo "[2/3] Processing CCTV clips..."
 
 python -c "
-import asyncio, glob, os, sys
+import asyncio, glob, os, sys, json
 sys.path.insert(0, '/pipeline')
 from pipeline.detect import process_clip
 
 async def main():
-    clips = sorted(glob.glob('$DATA_DIR/${STORE_ID}_CAM_*.mp4'))
-    if not clips:
-        # Try generic pattern
-        clips = sorted(glob.glob('$DATA_DIR/*.mp4'))
+    clips = sorted(glob.glob('$DATA_DIR/*.mp4'))
     if not clips:
         print('No clips found in $DATA_DIR')
         return
 
     print(f'Found {len(clips)} clip(s): {clips}')
 
-    # Process all cameras concurrently
-    tasks = []
+    # Load camera config from store_layout.json
+    try:
+        with open('/pipeline/data/store_layout.json') as f:
+            layout = json.load(f)
+            skip_cams = layout['stores']['$STORE_ID'].get('skip_cameras', [])
+    except:
+        skip_cams = ['CAM_4']
+
+    print(f'Skipping cameras: {skip_cams}')
+
+    # Extract camera_id from filename
+    # Expected patterns: CAM_1.mp4, CAM_3.mp4, etc.
+    camera_map = {}
     for clip in clips:
+        fname = os.path.basename(clip).upper()
+        cam_id = None
+        
+        # Try exact match: CAM_1.mp4, CAM_3.mp4, etc.
+        for i in range(1, 6):
+            if f'CAM_{i}' in fname or f'CAM{i}' in fname:
+                cam_id = f'CAM_{i}'
+                break
+        
+        if not cam_id:
+            # Fallback heuristics
+            if 'ENTRY' in fname:
+                cam_id = 'CAM_3'
+            elif 'BILLING' in fname or 'CASH' in fname:
+                cam_id = 'CAM_5'
+            elif 'MAIN' in fname or 'FLOOR' in fname:
+                cam_id = 'CAM_1'
+            elif 'MAKEUP' in fname:
+                cam_id = 'CAM_2'
+            elif 'STOCK' in fname or 'BACK' in fname:
+                cam_id = 'CAM_4'
+            else:
+                cam_id = 'CAM_1'  # default
+        
+        # SKIP CAM_4 (stockroom)
+        if cam_id in skip_cams:
+            print(f'[SKIP] {fname} → {cam_id} (staff-only area)')
+            continue
+        
+        camera_map[clip] = cam_id
+
+    # Process all non-skipped cameras concurrently
+    tasks = []
+    for clip, cam_id in camera_map.items():
         fname = os.path.basename(clip)
-        # Extract camera_id from filename
-        if 'ENTRY' in fname.upper():
-            cam = 'CAM_ENTRY_01'
-        elif 'FLOOR' in fname.upper() or 'MAIN' in fname.upper():
-            cam = 'CAM_FLOOR_01'
-        elif 'BILLING' in fname.upper():
-            cam = 'CAM_BILLING_01'
-        else:
-            cam = f'CAM_{fname[:10]}'
 
         tasks.append(process_clip(
             clip_path='$DATA_DIR/' + fname,
             store_id='$STORE_ID',
-            camera_id=cam,
+            camera_id=cam_id,
             layout_path='$DATA_DIR/store_layout.json',
             api_url='$API_URL',
             speed_factor=float('$SPEED_FACTOR'),
