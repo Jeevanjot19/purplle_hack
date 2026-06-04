@@ -155,6 +155,70 @@
         }
 
       }
+    },
+    "STORE_BLR_002": {
+      "store_name": "Challenge Demo Store Bangalore",
+      "city": "Bangalore",
+      "open_hours": { "open": "10:00", "close": "22:00" },
+      "cameras": {
+        "CAM_ENTRY_01": {
+          "type": "entry_exit",
+          "process": true,
+          "description": "Challenge demo entry camera",
+          "resolution": [1280, 720],
+          "fps": 25,
+          "zones": [
+            {
+              "id": "ENTRY_ZONE",
+              "label": "Entry threshold",
+              "polygon": [[0, 0], [400, 0], [400, 400], [0, 400]],
+              "is_entry": true,
+              "is_billing": false
+            }
+          ],
+          "tripwire": {
+            "x1": 0,
+            "y1": 300,
+            "x2": 400,
+            "y2": 300,
+            "inside_y_direction": "up"
+          }
+        },
+        "CAM_FLOOR_01": {
+          "type": "main_floor",
+          "process": true,
+          "description": "Challenge demo sales floor camera",
+          "resolution": [1280, 720],
+          "fps": 25,
+          "zones": [
+            {
+              "id": "SKINCARE",
+              "label": "Skincare aisle",
+              "polygon": [[0, 0], [500, 0], [500, 500], [0, 500]],
+              "is_entry": false,
+              "is_billing": false
+            },
+            {
+              "id": "MAKEUP",
+              "label": "Makeup wall",
+              "polygon": [[500, 0], [900, 0], [900, 500], [500, 500]],
+              "is_entry": false,
+              "is_billing": false
+            },
+            {
+              "id": "BILLING_QUEUE",
+              "label": "Billing queue",
+              "polygon": [[900, 0], [1280, 0], [1280, 720], [900, 720]],
+              "is_entry": false,
+              "is_billing": true
+            }
+          ],
+          "tripwire": null
+        }
+      },
+      "camera_processing_order": ["CAM_ENTRY_01", "CAM_FLOOR_01"],
+      "skip_cameras": [],
+      "notes": "Small challenge-store layout used by sample events and smoke tests."
     }
   }
 }
