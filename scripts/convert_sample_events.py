@@ -24,7 +24,9 @@ EVENT_ALIASES = {
     "exit": "EXIT",
     "reentry": "REENTRY",
     "zone_enter": "ZONE_ENTER",
+    "zone_entered": "ZONE_ENTER",
     "zone_exit": "ZONE_EXIT",
+    "zone_exited": "ZONE_EXIT",
     "zone_dwell": "ZONE_DWELL",
     "dwell": "ZONE_DWELL",
     "billing_queue_join": "BILLING_QUEUE_JOIN",
@@ -37,7 +39,7 @@ EVENT_ALIASES = {
 def convert_event(raw: dict) -> dict:
     event_type = normalize_event_type(raw.get("event_type", "ENTRY"))
     visitor_id = normalize_visitor_id(raw.get("visitor_id") or raw.get("id_token") or raw.get("person_id"))
-    timestamp = normalize_timestamp(raw.get("timestamp") or raw.get("event_timestamp") or raw.get("time"))
+    timestamp = normalize_timestamp(raw.get("event_timestamp") or raw.get("event_time") or raw.get("timestamp") or raw.get("time"))
 
     metadata = raw.get("metadata") if isinstance(raw.get("metadata"), dict) else {}
     queue_depth = raw.get("queue_depth", metadata.get("queue_depth"))
@@ -62,7 +64,7 @@ def convert_event(raw: dict) -> dict:
         "zone_id": zone_id,
         "dwell_ms": dwell_ms,
         "is_staff": bool(raw.get("is_staff", False)),
-        "confidence": float(raw.get("confidence", 0.9)),
+        "confidence": float(raw.get("confidence", 0.75)),
         "metadata": {
             "queue_depth": queue_depth,
             "sku_zone": raw.get("sku_zone") or metadata.get("sku_zone"),
@@ -91,6 +93,8 @@ def normalize_visitor_id(value: str | None) -> str:
     token = str(value or uuid.uuid4().hex[:8]).strip()
     if token.startswith("VIS_"):
         return token
+    if token.startswith("ID_"):
+        return f"VIS_{token[3:]}"
     safe = "".join(ch for ch in token if ch.isalnum())[:24] or uuid.uuid4().hex[:8]
     return f"VIS_{safe}"
 

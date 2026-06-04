@@ -14,6 +14,20 @@ curl http://localhost:8000/stores/STORE_BLR_002/metrics
 
 Dashboard: http://localhost:3000
 
+## Provided Challenge Resources
+
+Provided resources used:
+
+- Store 1: CAM 1 zone, CAM 2 zone, CAM 3 entry, CAM 5 billing, Store 1 layout.
+- Store 2: entry 1, entry 2, zone, billing_area, Store 2 layout.
+- POS sample: `order_id`, `order_date`, `order_time`, `store_id`, `product_id`, `brand_name`, `total_amount`.
+- `sample_events.jsonl`: legacy event schema converted by `scripts/convert_sample_events.py`.
+
+Store ID note:
+
+- `ST1008` is used for the provided real POS/video resources.
+- `STORE_BLR_002` is included for challenge acceptance-gate compatibility.
+
 ## What Runs
 
 `docker compose up --build` starts:
@@ -118,6 +132,14 @@ docker compose --profile pipeline up --build pipeline
 ```
 
 ## Detection Pipeline
+
+Real clip metadata used for pipeline validation:
+
+- Store 1 `CAM_1.mp4` zone clip: 1920x1080, about 140 seconds.
+- Store 1 `CAM_2.mp4` zone clip: 1920x1080, about 126 seconds.
+- Store 1 `CAM_3.mp4` entry clip: 1920x1080, about 148 seconds.
+- Store 1 `CAM_5.mp4` billing clip: 1920x1080, about 139 seconds.
+- Store 2 resources: entry 1, entry 2, zone, billing_area; expected 960x1080, 25fps, about 76-120 seconds when present.
 
 Manual CAM_3 entry/exit test:
 

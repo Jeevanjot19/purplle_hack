@@ -116,6 +116,14 @@
       <div class="label">Abandonment</div>
       <div class="value" id="abandonment">0.0%</div>
     </section>
+    <section class="card">
+      <div class="label">Last event</div>
+      <div class="value" id="last-event">-</div>
+    </section>
+    <section class="card">
+      <div class="label">Anomalies count</div>
+      <div class="value" id="anomaly-count">0</div>
+    </section>
   </main>
 
   <section class="panel">
@@ -141,6 +149,7 @@
         const anomalies = await anomaliesRes.json();
         renderMetrics(metrics);
         renderAnomalies(anomalies.active_anomalies || []);
+        document.getElementById("anomaly-count").textContent = anomalies.count ?? 0;
         document.getElementById("status").textContent =
           `Connected to ${storeId}. Last refresh ${new Date().toLocaleTimeString()}.`;
       } catch (error) {
@@ -155,6 +164,9 @@
       document.getElementById("queue").textContent = data.queue_depth_current ?? 0;
       document.getElementById("abandonment").textContent =
         `${((data.abandonment_rate ?? 0) * 100).toFixed(1)}%`;
+      document.getElementById("last-event").textContent = data.last_event_ts
+        ? new Date(data.last_event_ts).toLocaleTimeString()
+        : "-";
     }
 
     function renderAnomalies(items) {

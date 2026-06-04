@@ -21,7 +21,23 @@ def test_convert_event_maps_challenge_fields():
     assert converted["event_type"] == "ENTRY"
     assert converted["timestamp"] == "2026-06-04T04:30:00Z"
     assert converted["dwell_ms"] == 0
-    assert converted["confidence"] == 0.9
+    assert converted["confidence"] == 0.75
+
+
+def test_convert_event_maps_legacy_variants():
+    converted = convert_event({
+        "id_token": "ID_60001",
+        "store_id": "STORE_BLR_002",
+        "event_time": "2026-06-04T10:00:00",
+        "event_type": "zone_entered",
+        "camera_id": "CAM_FLOOR_01",
+        "zone_id": "SKINCARE",
+    })
+
+    assert converted["visitor_id"] == "VIS_60001"
+    assert converted["event_type"] == "ZONE_ENTER"
+    assert converted["timestamp"] == "2026-06-04T10:00:00Z"
+    assert converted["camera_id"] == "CAM_FLOOR_01"
 
 
 def test_convert_event_preserves_zone_for_dwell():
