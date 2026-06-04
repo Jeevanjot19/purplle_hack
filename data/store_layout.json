@@ -3,268 +3,158 @@
     "ST1008": {
       "store_name": "Brigade_Bangalore",
       "city": "Bangalore",
-      "open_hours": {
-        "open": "10:00",
-        "close": "22:00"
-      },
+      "open_hours": { "open": "10:00", "close": "22:00" },
       "cameras": {
+
         "CAM_1": {
           "type": "main_floor",
-          "description": "Main floor wide-angle, covers Korean skincare wall and cash counter",
-          "resolution": [1920, 1080],
+          "process": true,
           "fps": 30,
+          "resolution": [1920, 1080],
+          "description": "Main floor — Korean skincare, DermDoc/Minimalist, Cash Counter",
+          "emits_entry_exit": false,
           "zones": [
             {
               "id": "KOREAN_SKINCARE",
               "label": "Korean Skincare / The Face Shop / Good Vibes",
-              "polygon": [[0, 0], [900, 0], [900, 420], [0, 420]],
-              "is_entry": false,
+              "polygon": [[0,0],[820,0],[820,430],[0,430]],
               "is_billing": false
             },
             {
               "id": "DERMDOC_MINIMALIST",
-              "label": "DermDoc / Minimalist / Aqualogica",
-              "polygon": [[900, 0], [1300, 0], [1300, 420], [900, 420]],
-              "is_entry": false,
+              "label": "DermDoc / Minimalist / Aqualogica / Lakme Skin",
+              "polygon": [[820,0],[1300,0],[1300,430],[820,430]],
               "is_billing": false
             },
             {
               "id": "CASH_COUNTER",
               "label": "Cash Counter / Billing Area",
-              "polygon": [[1300, 0], [1920, 0], [1920, 700], [1300, 700]],
-              "is_entry": false,
+              "polygon": [[1300,0],[1920,0],[1920,700],[1300,700]],
               "is_billing": true
             },
             {
               "id": "FOH_FLOOR",
-              "label": "Main Floor / Central Display Area",
-              "polygon": [[0, 420], [1300, 420], [1300, 1080], [0, 1080]],
-              "is_entry": false,
+              "label": "Main Floor / Central Display",
+              "polygon": [[0,430],[1300,430],[1300,1080],[0,1080]],
               "is_billing": false
             }
           ],
           "tripwire": null
         },
+
         "CAM_2": {
           "type": "makeup_wall",
-          "description": "Makeup and back wall camera — Alps, Swiss Beauty, Lakme, Faces Canada, Maybelline, PMU",
-          "resolution": [1920, 1080],
+          "process": true,
           "fps": 30,
+          "resolution": [1920, 1080],
+          "description": "Makeup wall — Alps, Swiss Beauty, Lakme, Faces Canada, Maybelline, PMU",
+          "emits_entry_exit": false,
           "zones": [
             {
-              "id": "ACCESSORIES_PMU",
-              "label": "Accessories / PMU Counter",
-              "polygon": [[0, 0], [400, 0], [400, 700], [0, 700]],
-              "is_entry": false,
+              "id": "PMU_ACCESSORIES",
+              "label": "PMU Counter / Accessories",
+              "polygon": [[0,0],[380,0],[380,680],[0,680]],
               "is_billing": false
             },
             {
               "id": "ALPS_LOREAL",
               "label": "Alps Goodness / L'Oreal / Hair",
-              "polygon": [[200, 0], [650, 0], [650, 600], [200, 600]],
-              "is_entry": false,
+              "polygon": [[200,0],[620,0],[620,580],[200,580]],
               "is_billing": false
             },
             {
               "id": "SWISS_BEAUTY_LAKME",
               "label": "Swiss Beauty / Lakme",
-              "polygon": [[650, 0], [950, 0], [950, 600], [650, 600]],
-              "is_entry": false,
+              "polygon": [[620,0],[950,0],[950,580],[620,580]],
               "is_billing": false
             },
             {
               "id": "FACES_CANADA",
               "label": "Faces Canada",
-              "polygon": [[950, 0], [1250, 0], [1250, 600], [950, 600]],
-              "is_entry": false,
+              "polygon": [[950,0],[1250,0],[1250,580],[950,580]],
               "is_billing": false
             },
             {
               "id": "MAYBELLINE",
               "label": "Maybelline New York",
-              "polygon": [[1250, 0], [1920, 0], [1920, 600], [1250, 600]],
-              "is_entry": false,
+              "polygon": [[1250,0],[1920,0],[1920,580],[1250,580]],
               "is_billing": false
             },
             {
               "id": "FOH_FLOOR",
               "label": "Main Floor / Central Display",
-              "polygon": [[0, 600], [1920, 600], [1920, 1080], [0, 1080]],
-              "is_entry": false,
+              "polygon": [[0,580],[1920,580],[1920,1080],[0,1080]],
               "is_billing": false
             }
           ],
           "tripwire": null
         },
+
         "CAM_3": {
           "type": "entry_exit",
-          "description": "Entry/Exit door camera — glass storefront, tripwire at door threshold",
-          "resolution": [1920, 1080],
+          "process": true,
           "fps": 30,
+          "resolution": [1920, 1080],
+          "description": "Entry/Exit door camera — glass storefront, tripwire at y=370",
+          "emits_entry_exit": true,
           "zones": [
             {
               "id": "ENTRY_ZONE",
               "label": "Store Entry / Exit Threshold",
-              "polygon": [[300, 200], [1100, 200], [1100, 700], [300, 700]],
+              "polygon": [[250,150],[1050,150],[1050,720],[250,720]],
               "is_entry": true,
-              "is_billing": false
-            },
-            {
-              "id": "STORE_INTERIOR_ENTRY",
-              "label": "Interior visible from entry cam",
-              "polygon": [[0, 0], [600, 0], [600, 500], [0, 500]],
-              "is_entry": false,
               "is_billing": false
             }
           ],
           "tripwire": {
-            "x1": 300,
-            "y1": 350,
-            "x2": 950,
-            "y2": 350,
-            "inside_y_direction": "up",
-            "description": "Horizontal line at door threshold. Person moving UP (decreasing y) = entering store. Person moving DOWN (increasing y) = exiting."
+            "x1": 250, "y1": 370,
+            "x2": 950, "y2": 370,
+            "entry_direction": "up",
+            "description": "Centroid crossing upward (y decreasing past 370) = ENTRY. Downward = EXIT."
           }
         },
+
+        "CAM_4": {
+          "type": "stockroom",
+          "process": false,
+          "fps": 25,
+          "resolution": [1920, 1080],
+          "description": "Back stockroom — staff only. Excluded from processing.",
+          "emits_entry_exit": false,
+          "zones": []
+        },
+
         "CAM_5": {
           "type": "billing_counter",
-          "description": "Billing/Cash Counter camera — POS desk, accessories screen, billing queue area",
-          "resolution": [1920, 1080],
-          "fps": 30,
           "process": true,
+          "fps": 25,
+          "resolution": [1920, 1080],
+          "description": "Cash Counter / Billing desk — POS terminal visible",
+          "emits_entry_exit": false,
           "zones": [
             {
-              "id": "BILLING_DESK",
-              "label": "POS Billing Desk / Checkout Area",
-              "polygon": [[400, 200], [900, 200], [900, 800], [400, 800]],
-              "is_entry": false,
-              "is_billing": true
-            },
-            {
-              "id": "ACCESSORIES_SCREEN",
-              "label": "Accessories Screen / Customer Wait Area",
-              "polygon": [[900, 200], [1400, 200], [1400, 800], [900, 800]],
-              "is_entry": false,
+              "id": "CASH_COUNTER",
+              "label": "Active Billing Position",
+              "polygon": [[0,150],[550,150],[550,900],[0,900]],
               "is_billing": true
             },
             {
               "id": "BILLING_QUEUE_AREA",
-              "label": "Queue / Standing Area",
-              "polygon": [[0, 0], [1920, 0], [1920, 1080], [0, 1080]],
-              "is_entry": false,
+              "label": "Billing Queue Waiting Area",
+              "polygon": [[550,150],[1050,150],[1050,900],[550,900]],
               "is_billing": true
-            }
-          ],
-          "tripwire": {
-            "x1": 400,
-            "y1": 200,
-            "x2": 1400,
-            "y2": 200,
-            "inside_y_direction": "down",
-            "description": "Horizontal line at billing desk entrance. Person moving DOWN (increasing y) = entering billing area."
-          }
-        },
-        "CAM_4": {
-          "type": "stockroom",
-          "description": "Staff-only stockroom / back office — DO NOT PROCESS",
-          "resolution": [1920, 1080],
-          "fps": 30,
-          "process": false,
-          "skip_reason": "Staff-only area. No customers. Only adds noise.",
-          "zones": []
-        }
-      },
-      "cross_camera_overlap": [
-        {
-          "cameras": ["CAM_1", "CAM_2"],
-          "region": "central_display",
-          "description": "Summer Essentials central display visible in both cameras"
-        },
-        {
-          "cameras": ["CAM_3", "CAM_1"],
-          "region": "entry_to_main_floor",
-          "description": "Person enters via CAM_3 door, then appears in CAM_1 main floor"
-        },
-        {
-          "cameras": ["CAM_1", "CAM_5"],
-          "region": "cash_counter_area",
-          "description": "Customer at cash counter visible in both CAM_1 and CAM_5"
-        }
-      ],
-      "camera_processing_order": [
-        "CAM_3",
-        "CAM_1",
-        "CAM_2",
-        "CAM_5"
-      ],
-      "skip_cameras": ["CAM_4"],
-      "notes": "CAM_3 is entry/exit source of truth. CAM_1, CAM_2, CAM_5 are zone/billing events only. CAM_4 skipped entirely."
-    },
-    "STORE_BLR_002": {
-      "store_name": "Challenge Demo Store Bangalore",
-      "city": "Bangalore",
-      "open_hours": {
-        "open": "10:00",
-        "close": "22:00"
-      },
-      "cameras": {
-        "CAM_ENTRY_01": {
-          "type": "entry_exit",
-          "description": "Challenge demo entry camera",
-          "resolution": [1280, 720],
-          "fps": 25,
-          "zones": [
-            {
-              "id": "ENTRY_ZONE",
-              "label": "Entry threshold",
-              "polygon": [[0, 0], [400, 0], [400, 400], [0, 400]],
-              "is_entry": true,
-              "is_billing": false
-            }
-          ],
-          "tripwire": {
-            "x1": 0,
-            "y1": 300,
-            "x2": 400,
-            "y2": 300,
-            "inside_y_direction": "up"
-          }
-        },
-        "CAM_FLOOR_01": {
-          "type": "main_floor",
-          "description": "Challenge demo sales floor camera",
-          "resolution": [1280, 720],
-          "fps": 25,
-          "zones": [
-            {
-              "id": "SKINCARE",
-              "label": "Skincare aisle",
-              "polygon": [[0, 0], [500, 0], [500, 500], [0, 500]],
-              "is_entry": false,
-              "is_billing": false
             },
             {
-              "id": "MAKEUP",
-              "label": "Makeup wall",
-              "polygon": [[500, 0], [900, 0], [900, 500], [500, 500]],
-              "is_entry": false,
+              "id": "HAIRCARE_SKINCARE_BACK",
+              "label": "Haircare / Skincare Back Shelves",
+              "polygon": [[0,0],[900,0],[900,380],[0,380]],
               "is_billing": false
-            },
-            {
-              "id": "BILLING_QUEUE",
-              "label": "Billing queue",
-              "polygon": [[900, 0], [1280, 0], [1280, 720], [900, 720]],
-              "is_entry": false,
-              "is_billing": true
             }
           ],
           "tripwire": null
         }
-      },
-      "camera_processing_order": ["CAM_ENTRY_01", "CAM_FLOOR_01"],
-      "skip_cameras": [],
-      "notes": "Small challenge-store layout used by sample events and smoke tests."
+
+      }
     }
   }
 }
-
