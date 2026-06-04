@@ -13,9 +13,8 @@ Fields returned:
   - data_freshness_ms    : ms since last event was ingested
 """
 
-import json
 import structlog
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,6 +42,16 @@ async def get_metrics(
     queue_depth      = int(await redis.get(key_queue_depth(store_id))      or 0)
     conversion_count = int(await redis.get(key_conversion_count(store_id)) or 0)
     last_event_ts    = await redis.get(key_last_event_ts(store_id))
+
+    if visitor_count == 0:
+        visitor_result = await db.execute(text("""
+            SELECT COUNT(DISTINCT visitor_id) AS visitor_count
+            FROM events
+            WHERE store_id = :store_id
+              AND is_staff = FALSE
+              AND event_type = 'ENTRY'
+        """), {"store_id": store_id})
+        visitor_count = visitor_result.scalar_one() or 0
 
     conversion_rate = round(conversion_count / visitor_count, 4) if visitor_count > 0 else 0.0
 
@@ -84,6 +93,7 @@ async def get_metrics(
     return {
         "store_id":           store_id,
         "window":             "today",
+        "visitor_count":      visitor_count,
         "unique_visitors":    visitor_count,
         "conversion_rate":    conversion_rate,
         "avg_dwell_by_zone":  zone_dwell,

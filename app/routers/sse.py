@@ -28,10 +28,11 @@ logger = structlog.get_logger()
 
 @router.get(
     "/stores/{store_id}/stream",
+    response_model=None,
     response_class=EventSourceResponse,
     summary="Live metric stream for a store",
 )
-async def store_stream(store_id: str) -> AsyncIterable[ServerSentEvent]:
+async def store_stream(store_id: str) -> AsyncIterable[dict[str, str]]:
     """
     Yields a Server-Sent Event every time the ingest endpoint
     processes new events for this store. Clients connect once
