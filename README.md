@@ -2,6 +2,12 @@
 
 CCTV-based offline retail analytics for visitor counting, zone dwell, funnel conversion, queue monitoring, health checks, and anomaly detection.
 
+Public Prototype Dashboard: https://purplle-hack.vercel.app/
+
+Local Dashboard: http://localhost:3000
+
+Mandatory Event Log: `submission/event_log.jsonl`
+
 ## 5-Command Setup
 
 ```bash
@@ -12,7 +18,11 @@ curl http://localhost:8000/health
 curl http://localhost:8000/stores/STORE_BLR_002/metrics
 ```
 
-Dashboard: http://localhost:3000
+For detached mode, use:
+
+```bash
+docker compose up -d --build
+```
 
 ## Provided Challenge Resources
 
@@ -27,6 +37,8 @@ Store ID note:
 
 - `ST1008` is used for the provided real POS/video resources.
 - `STORE_BLR_002` is included for challenge acceptance-gate compatibility.
+
+Raw CCTV videos are not committed to the repository because the challenge footage is licensed for challenge use only and should not be redistributed.
 
 ## What Runs
 
@@ -57,6 +69,18 @@ Start services:
 
 ```bash
 docker compose up --build
+```
+
+Or start in detached mode:
+
+```bash
+docker compose up -d --build
+```
+
+Check running containers:
+
+```bash
+docker compose ps
 ```
 
 Check health:
@@ -93,6 +117,41 @@ Run the smoke test after Compose is up:
 bash scripts/smoke_test.sh
 ```
 
+Stop services:
+
+```bash
+docker compose down
+```
+
+## Public Prototype and Live Dashboard
+
+Public prototype dashboard:
+
+```text
+https://purplle-hack.vercel.app/
+```
+
+Local live dashboard:
+
+```text
+http://localhost:3000
+```
+
+The public dashboard supports demo replay mode so the prototype remains viewable without exposing a public backend. The local dashboard connects to the FastAPI backend started by Docker Compose and updates from live API responses.
+
+To test live local updates:
+
+```bash
+docker compose up -d --build
+python pipeline/simulator.py --stores STORE_BLR_002 --duration 20 --speed 5
+```
+
+Then open:
+
+```text
+http://localhost:3000
+```
+
 ## Sample Event Conversion
 
 Some challenge sample files use older names such as `id_token`, `store_code`, `event_timestamp`, and lowercase event types. Convert them with:
@@ -111,6 +170,30 @@ python scripts/convert_sample_events.py \
   --output data/converted_events.jsonl \
   --ingest \
   --api-url http://localhost:8000
+```
+
+## Final Submission Event Log
+
+The mandatory event log file is included at:
+
+```text
+submission/event_log.jsonl
+```
+
+It follows the provided `sample_events.jsonl` style as a JSONL file: one JSON object per line, no array wrapper.
+
+Validate it before submission:
+
+```bash
+python scripts/validate_event_log.py submission/event_log.jsonl
+```
+
+Regenerate it from the committed sample ingest batch:
+
+```bash
+python scripts/export_event_log.py \
+  --input data/sample_ingest_events.json \
+  --output submission/event_log.jsonl
 ```
 
 ## POS CSV Loading
@@ -232,8 +315,9 @@ data/                 store layout and sample ingest events
 dashboard/            static dashboard served by nginx
 docs/DESIGN.md        design overview and AI-assisted decisions
 docs/CHOICES.md       three key architecture decisions
-scripts/              converter and smoke test
+scripts/              event converters, event-log exporter, validator, and smoke test
 tests/                pytest suite
+submission/           mandatory event_log.jsonl for final submission
 docker-compose.yml    db, redis, api, dashboard, optional pipeline
 ```
 
@@ -243,10 +327,15 @@ docker-compose.yml    db, redis, api, dashboard, optional pipeline
 - `/health` tested
 - `/events/ingest` tested
 - `/stores/STORE_BLR_002/metrics` tested
+- `submission/event_log.jsonl` present and valid JSONL
+- `python scripts/validate_event_log.py submission/event_log.jsonl` tested
+- `README.md` present
 - `docs/DESIGN.md` present and over 250 words
 - `docs/CHOICES.md` present and over 250 words
+- Prompt blocks present at the top of test files
 - `pytest -q` test suite available
-- Dashboard URL: http://localhost:3000
+- Local dashboard URL: http://localhost:3000
+- Public prototype dashboard: https://purplle-hack.vercel.app/
 
 ## Known Limitations
 
