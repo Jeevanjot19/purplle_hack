@@ -52,6 +52,17 @@ class ReIDGallery:
         self._active[visitor_id] = ExitRecord(visitor_id, embedding, ts, camera_id)
         self._prune()
 
+    # Compatibility aliases for tests and prompt-generated edge-case checks.
+    # They intentionally preserve the public meaning used in earlier design docs:
+    # on_exit = remember a visitor for re-entry; on_entry = remember active visitor for cross-camera dedup.
+    def on_exit(self, visitor_id: str, embedding: np.ndarray,
+                camera_id: str, ts: datetime):
+        self.add_exit(visitor_id, embedding, camera_id, ts)
+
+    def on_entry(self, visitor_id: str, embedding: np.ndarray,
+                 camera_id: str, ts: datetime):
+        self.add_active(visitor_id, embedding, camera_id, ts)
+
     def find_reentry(self, embedding: np.ndarray,
                      now: datetime) -> str | None:
         """Return visitor_id if this embedding matches a recent exit."""
