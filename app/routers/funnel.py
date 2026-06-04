@@ -1,11 +1,7 @@
 """
 GET /stores/{store_id}/funnel
 
-Returns conversion funnel: Entry → Zone Visit → Billing → Purchase
-Session is the unit. Re-entries must not double-count.
-
-Uses the sessions table (kept in sync by ingestion.py) so this
-is a lightweight query, not a heavy aggregation over all events.
+Session-based funnel: entry -> zone_visit -> billing_queue -> purchase.
 """
 
 import structlog
@@ -26,49 +22,60 @@ async def get_funnel(
 ):
     result = await db.execute(text("""
         SELECT
-            COUNT(*)                                            AS total_sessions,
-            COUNT(*) FILTER (WHERE zones_visited != '[]'::jsonb
-                             AND is_staff = FALSE)             AS visited_zone,
-            COUNT(*) FILTER (WHERE reached_billing = TRUE
-                             AND is_staff = FALSE)             AS reached_billing,
-            COUNT(*) FILTER (WHERE converted = TRUE
-                             AND is_staff = FALSE)             AS purchased,
-            COUNT(*) FILTER (WHERE is_staff = FALSE)           AS customer_sessions
+            COUNT(*) FILTER (WHERE is_staff = FALSE) AS entry,
+            COUNT(*) FILTER (
+                WHERE is_staff = FALSE AND zones_visited != '[]'::jsonb
+            ) AS zone_visit,
+            COUNT(*) FILTER (
+                WHERE is_staff = FALSE AND reached_billing = TRUE
+            ) AS billing_queue,
+            COUNT(*) FILTER (
+                WHERE is_staff = FALSE AND converted = TRUE
+            ) AS purchase,
+            COALESCE(SUM(reentry_count) FILTER (WHERE is_staff = FALSE), 0) AS reentries
         FROM sessions
         WHERE store_id = :store_id
-          AND entry_time >= CURRENT_DATE
     """), {"store_id": store_id})
-
     row = result.fetchone()
 
-    total      = row.customer_sessions or 0
-    zone_visit = row.visited_zone      or 0
-    billing    = row.reached_billing   or 0
-    purchased  = row.purchased         or 0
+    counts = {
+        "entry": row.entry or 0,
+        "zone_visit": row.zone_visit or 0,
+        "billing_queue": row.billing_queue or 0,
+        "purchase": row.purchase or 0,
+    }
+    total = counts["entry"]
 
-    def pct(n, base):
-        return round(n / base * 100, 1) if base > 0 else 0.0
-
-    def drop(a, b, base):
-        lost = a - b
-        return {"lost": lost, "pct_lost": pct(lost, base)}
+    def pct(value: int, base: int) -> float:
+        return round(value / base * 100, 1) if base else 0.0
 
     stages = [
-        {"stage": "entry",         "count": total,      "pct": 100.0},
-        {"stage": "zone_visit",    "count": zone_visit, "pct": pct(zone_visit, total)},
-        {"stage": "billing_queue", "count": billing,    "pct": pct(billing, total)},
-        {"stage": "purchase",      "count": purchased,  "pct": pct(purchased, total)},
+        {"stage": name, "count": count, "pct_of_entry": pct(count, total)}
+        for name, count in counts.items()
     ]
 
-    dropoffs = [
-        {"from": "entry",         "to": "zone_visit",    **drop(total,      zone_visit, total)},
-        {"from": "zone_visit",    "to": "billing_queue", **drop(zone_visit, billing,    total)},
-        {"from": "billing_queue", "to": "purchase",      **drop(billing,    purchased,  total)},
+    transitions = [
+        ("entry", "zone_visit"),
+        ("zone_visit", "billing_queue"),
+        ("billing_queue", "purchase"),
     ]
+    dropoffs = []
+    for start, end in transitions:
+        start_count = counts[start]
+        end_count = counts[end]
+        lost = max(start_count - end_count, 0)
+        dropoffs.append({
+            "from": start,
+            "to": end,
+            "lost": lost,
+            "dropoff_pct": pct(lost, start_count),
+        })
 
     return {
-        "store_id":       store_id,
+        "store_id": store_id,
+        "session_unit": "visitor_id",
         "sessions_total": total,
-        "stages":         stages,
-        "dropoffs":       dropoffs,
+        "reentries_observed": row.reentries or 0,
+        "stages": stages,
+        "dropoffs": dropoffs,
     }

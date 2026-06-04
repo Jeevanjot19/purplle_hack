@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Store Intelligence Dashboard</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f6f7fb;
+      color: #172033;
+    }
+    body {
+      margin: 0;
+      padding: 28px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    h1 {
+      font-size: 24px;
+      margin: 0;
+    }
+    select {
+      padding: 8px 10px;
+      border: 1px solid #cfd6e4;
+      border-radius: 6px;
+      background: white;
+      font: inherit;
+    }
+    .status {
+      font-size: 13px;
+      color: #526070;
+      margin-bottom: 18px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    .card, .panel {
+      background: white;
+      border: 1px solid #dbe1ea;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(18, 28, 45, 0.05);
+    }
+    .label {
+      color: #667085;
+      font-size: 12px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .value {
+      font-size: 30px;
+      font-weight: 700;
+    }
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+    .row {
+      border-top: 1px solid #eef1f6;
+      padding: 10px 0;
+      font-size: 14px;
+    }
+    .row:first-of-type {
+      border-top: 0;
+    }
+    .badge {
+      display: inline-block;
+      min-width: 64px;
+      padding: 3px 7px;
+      border-radius: 5px;
+      font-size: 11px;
+      text-align: center;
+      margin-right: 8px;
+      background: #e8edf7;
+    }
+    .WARN { background: #fff3cd; }
+    .CRITICAL { background: #f8d7da; }
+    .INFO { background: #dbeafe; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Store Intelligence Dashboard</h1>
+    <select id="store">
+      <option value="STORE_BLR_002">STORE_BLR_002</option>
+      <option value="ST1008">ST1008</option>
+    </select>
+  </header>
+
+  <div class="status" id="status">Loading...</div>
+
+  <main class="grid">
+    <section class="card">
+      <div class="label">Unique visitors</div>
+      <div class="value" id="visitors">0</div>
+    </section>
+    <section class="card">
+      <div class="label">Conversion rate</div>
+      <div class="value" id="conversion">0.0%</div>
+    </section>
+    <section class="card">
+      <div class="label">Queue depth</div>
+      <div class="value" id="queue">0</div>
+    </section>
+    <section class="card">
+      <div class="label">Abandonment</div>
+      <div class="value" id="abandonment">0.0%</div>
+    </section>
+  </main>
+
+  <section class="panel">
+    <h2>Anomalies</h2>
+    <div id="anomalies">No anomalies loaded.</div>
+  </section>
+
+  <script>
+    const API = "http://localhost:8000";
+    const store = document.getElementById("store");
+
+    async function refresh() {
+      const storeId = store.value;
+      try {
+        const [metricsRes, anomaliesRes] = await Promise.all([
+          fetch(`${API}/stores/${storeId}/metrics`),
+          fetch(`${API}/stores/${storeId}/anomalies`)
+        ]);
+        if (!metricsRes.ok || !anomaliesRes.ok) {
+          throw new Error("API returned an error");
+        }
+        const metrics = await metricsRes.json();
+        const anomalies = await anomaliesRes.json();
+        renderMetrics(metrics);
+        renderAnomalies(anomalies.active_anomalies || []);
+        document.getElementById("status").textContent =
+          `Connected to ${storeId}. Last refresh ${new Date().toLocaleTimeString()}.`;
+      } catch (error) {
+        document.getElementById("status").textContent = `Disconnected: ${error.message}`;
+      }
+    }
+
+    function renderMetrics(data) {
+      document.getElementById("visitors").textContent = data.unique_visitors ?? 0;
+      document.getElementById("conversion").textContent =
+        `${((data.conversion_rate ?? 0) * 100).toFixed(1)}%`;
+      document.getElementById("queue").textContent = data.queue_depth_current ?? 0;
+      document.getElementById("abandonment").textContent =
+        `${((data.abandonment_rate ?? 0) * 100).toFixed(1)}%`;
+    }
+
+    function renderAnomalies(items) {
+      const target = document.getElementById("anomalies");
+      if (!items.length) {
+        target.textContent = "No active anomalies.";
+        return;
+      }
+      target.innerHTML = items.map(item => `
+        <div class="row">
+          <span class="badge ${item.severity}">${item.severity}</span>
+          <strong>${item.type || item.anomaly_type}</strong>: ${item.message || item.suggested_action}
+        </div>
+      `).join("");
+    }
+
+    store.addEventListener("change", refresh);
+    refresh();
+    setInterval(refresh, 2000);
+  </script>
+</body>
+</html>

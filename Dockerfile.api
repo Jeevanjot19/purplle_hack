@@ -10,6 +10,7 @@ COPY requirements.api.txt .
 RUN pip install --no-cache-dir -r requirements.api.txt
 
 COPY app/ ./app/
+COPY data/store_layout.json ./data/store_layout.json
 
 EXPOSE 8000
 

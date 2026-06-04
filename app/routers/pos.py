@@ -1,14 +1,12 @@
 """
-app/routers/pos.py
-──────────────────
-POST /pos/load — Internal endpoint to bulk-load POS transactions.
-Called by pipeline/pos_loader.py at startup.
-Also handles POS correlation: marks sessions as converted when a
-transaction occurs within 5 minutes of a billing zone visit.
+POST /pos/load - bulk load POS transactions and correlate purchases.
 """
+
+from datetime import datetime
+
 import structlog
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,14 +18,21 @@ logger = structlog.get_logger()
 
 
 class POSTransaction(BaseModel):
-    transaction_id: str
-    store_id:       str
-    timestamp:      str
-    basket_value:   float
+    transaction_id: str = Field(..., min_length=1)
+    store_id: str = Field(..., min_length=1)
+    timestamp: datetime
+    basket_value: float = Field(..., ge=0)
+
+    @field_validator("timestamp")
+    @classmethod
+    def require_timezone(cls, value: datetime) -> datetime:
+        if value.tzinfo is None:
+            raise ValueError("timestamp must be timezone-aware")
+        return value
 
 
 class POSLoadPayload(BaseModel):
-    transactions: list[POSTransaction]
+    transactions: list[POSTransaction] = Field(default_factory=list, max_length=500)
 
 
 @router.post("/pos/load")
@@ -36,22 +41,22 @@ async def load_pos_transactions(
     db: AsyncSession = Depends(get_db),
     redis=Depends(get_redis),
 ):
-    """Bulk load POS transactions and correlate with sessions."""
     if not payload.transactions:
-        return {"loaded": 0}
+        return {"loaded": 0, "duplicate_skipped": 0, "sessions_converted": 0}
 
-    rows = [t.model_dump() for t in payload.transactions]
-
-    # Bulk insert with ON CONFLICT DO NOTHING for idempotency
-    await db.execute(text("""
-        INSERT INTO pos_transactions (transaction_id, store_id, timestamp, basket_value)
-        VALUES (:transaction_id, :store_id, :timestamp::timestamptz, :basket_value)
-        ON CONFLICT (transaction_id) DO NOTHING
-    """), rows)
+    inserted = 0
+    for txn in payload.transactions:
+        result = await db.execute(text("""
+            INSERT INTO pos_transactions (transaction_id, store_id, timestamp, basket_value)
+            VALUES (:transaction_id, :store_id, :timestamp, :basket_value)
+            ON CONFLICT (transaction_id) DO NOTHING
+            RETURNING transaction_id
+        """), txn.model_dump())
+        if result.scalar_one_or_none():
+            inserted += 1
     await db.commit()
 
-    # Correlate with sessions: any session in the billing zone
-    # within 5 minutes before this transaction = converted
+    sessions_converted = 0
     for txn in payload.transactions:
         result = await db.execute(text("""
             UPDATE sessions
@@ -59,21 +64,43 @@ async def load_pos_transactions(
                 basket_value = :basket_value,
                 last_updated = NOW()
             WHERE store_id = :store_id
+              AND is_staff = FALSE
               AND reached_billing = TRUE
               AND converted = FALSE
-              AND entry_time >= :txn_ts::timestamptz - INTERVAL '5 minutes'
-              AND entry_time <= :txn_ts::timestamptz
+              AND last_updated >= CAST(:txn_ts AS timestamptz) - INTERVAL '5 minutes'
+              AND last_updated <= CAST(:txn_ts AS timestamptz)
         """), {
-            "store_id":     txn.store_id,
+            "store_id": txn.store_id,
             "basket_value": txn.basket_value,
-            "txn_ts":       txn.timestamp,
+            "txn_ts": txn.timestamp,
         })
-
-        # Update Redis conversion counter for each newly converted session
-        if result.rowcount > 0:
-            await redis.incrby(key_conversion_count(txn.store_id), result.rowcount)
+        sessions_converted += result.rowcount or 0
 
     await db.commit()
 
-    logger.info("pos_loaded", count=len(rows))
-    return {"loaded": len(rows)}
+    if sessions_converted:
+        by_store: dict[str, int] = {}
+        for txn in payload.transactions:
+            by_store.setdefault(txn.store_id, 0)
+        # Recompute exact converted counts per touched store to keep Redis bounded.
+        for store_id in by_store:
+            count_result = await db.execute(text("""
+                SELECT COUNT(*) FROM sessions
+                WHERE store_id = :store_id
+                  AND is_staff = FALSE
+                  AND converted = TRUE
+            """), {"store_id": store_id})
+            await redis.set(key_conversion_count(store_id), count_result.scalar_one() or 0)
+
+    duplicate_skipped = len(payload.transactions) - inserted
+    logger.info(
+        "pos_loaded",
+        loaded=inserted,
+        duplicate_skipped=duplicate_skipped,
+        sessions_converted=sessions_converted,
+    )
+    return {
+        "loaded": inserted,
+        "duplicate_skipped": duplicate_skipped,
+        "sessions_converted": sessions_converted,
+    }
