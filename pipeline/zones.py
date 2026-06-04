@@ -28,10 +28,16 @@ class ZoneEngine:
         # {"stores": {"STORE_BLR_002": {"zones": [{"id":"SKINCARE","polygon":[[x,y],...]}]}}}
         stores = layout.get("stores", layout)  # handle flat or nested
         store_data = stores.get(self.store_id, {})
-        zones_raw = store_data.get("zones", [])
+        zones_raw = list(store_data.get("zones", []))
+        for camera in store_data.get("cameras", {}).values():
+            if camera.get("process", True) is False:
+                continue
+            zones_raw.extend(camera.get("zones", []))
 
         for zone in zones_raw:
-            zone_id = zone["id"]
+            zone_id = zone.get("id") or zone.get("zone_id")
+            if not zone_id:
+                continue
             coords  = zone["polygon"]           # list of [x, y] pairs
             self.zones[zone_id] = Polygon(coords)
             if "entry" in zone_id.lower() or zone.get("is_entry", False):

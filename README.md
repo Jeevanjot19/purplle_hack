@@ -25,6 +25,18 @@ Dashboard: http://localhost:3000
 
 The detection pipeline is available under the `pipeline` Compose profile so normal API startup remains fast.
 
+## Camera Layout
+
+The richer demo layout in `data/store_layout.json` models the real multi-camera store setup:
+
+- `CAM_1` main floor: skincare, central display, and cash-counter-adjacent zones.
+- `CAM_2` makeup wall: makeup and accessories wall zones.
+- `CAM_3` entry/exit: door tripwire and source of truth for ENTRY/EXIT.
+- `CAM_4` stockroom: marked `process=false` and skipped because it is staff-only.
+- `CAM_5` billing counter: checkout desk and queue zones.
+
+The acceptance-store layout for `STORE_BLR_002` is also included so the evaluator can call `/stores/STORE_BLR_002/metrics` on a clean database and receive valid JSON immediately.
+
 ## Core Commands
 
 Start services:
